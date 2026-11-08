@@ -1,0 +1,659 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "username": "admin",
+      "password": "123456",
+      "fullName": "Lễ tân"
+    }
+  ],
+  "roomTypes": [
+    {
+      "id": 1,
+      "name": "Standard",
+      "price": 500000
+    },
+    {
+      "id": 2,
+      "name": "Deluxe",
+      "price": 800000
+    },
+    {
+      "id": 3,
+      "name": "Suite",
+      "price": 1200000
+    }
+  ],
+  "rooms": [
+    {
+      "id": 1,
+      "number": "101",
+      "floor": 1,
+      "roomTypeId": 1,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 2,
+      "number": "102",
+      "floor": 1,
+      "roomTypeId": 1,
+      "status": "OCCUPIED"
+    },
+    {
+      "id": 3,
+      "number": "103",
+      "floor": 1,
+      "roomTypeId": 1,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 4,
+      "number": "104",
+      "floor": 1,
+      "roomTypeId": 1,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 5,
+      "number": "105",
+      "floor": 1,
+      "roomTypeId": 1,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 6,
+      "number": "106",
+      "floor": 1,
+      "roomTypeId": 1,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 7,
+      "number": "107",
+      "floor": 1,
+      "roomTypeId": 2,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 8,
+      "number": "108",
+      "floor": 1,
+      "roomTypeId": 2,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 9,
+      "number": "109",
+      "floor": 1,
+      "roomTypeId": 2,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 10,
+      "number": "110",
+      "floor": 1,
+      "roomTypeId": 2,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 11,
+      "number": "111",
+      "floor": 1,
+      "roomTypeId": 3,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 12,
+      "number": "112",
+      "floor": 1,
+      "roomTypeId": 3,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 13,
+      "number": "201",
+      "floor": 2,
+      "roomTypeId": 1,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 14,
+      "number": "202",
+      "floor": 2,
+      "roomTypeId": 1,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 15,
+      "number": "203",
+      "floor": 2,
+      "roomTypeId": 1,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 16,
+      "number": "204",
+      "floor": 2,
+      "roomTypeId": 1,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 17,
+      "number": "205",
+      "floor": 2,
+      "roomTypeId": 1,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 18,
+      "number": "206",
+      "floor": 2,
+      "roomTypeId": 1,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 19,
+      "number": "207",
+      "floor": 2,
+      "roomTypeId": 2,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 20,
+      "number": "208",
+      "floor": 2,
+      "roomTypeId": 2,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 21,
+      "number": "209",
+      "floor": 2,
+      "roomTypeId": 2,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 22,
+      "number": "210",
+      "floor": 2,
+      "roomTypeId": 2,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 23,
+      "number": "211",
+      "floor": 2,
+      "roomTypeId": 3,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 24,
+      "number": "212",
+      "floor": 2,
+      "roomTypeId": 3,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 25,
+      "number": "301",
+      "floor": 3,
+      "roomTypeId": 1,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 26,
+      "number": "302",
+      "floor": 3,
+      "roomTypeId": 1,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 27,
+      "number": "303",
+      "floor": 3,
+      "roomTypeId": 1,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 28,
+      "number": "304",
+      "floor": 3,
+      "roomTypeId": 1,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 29,
+      "number": "305",
+      "floor": 3,
+      "roomTypeId": 1,
+      "status": "DIRTY"
+    },
+    {
+      "id": 30,
+      "number": "306",
+      "floor": 3,
+      "roomTypeId": 1,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 31,
+      "number": "307",
+      "floor": 3,
+      "roomTypeId": 2,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 32,
+      "number": "308",
+      "floor": 3,
+      "roomTypeId": 2,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 33,
+      "number": "309",
+      "floor": 3,
+      "roomTypeId": 2,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 34,
+      "number": "310",
+      "floor": 3,
+      "roomTypeId": 2,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 35,
+      "number": "311",
+      "floor": 3,
+      "roomTypeId": 3,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 36,
+      "number": "312",
+      "floor": 3,
+      "roomTypeId": 3,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 37,
+      "number": "401",
+      "floor": 4,
+      "roomTypeId": 1,
+      "status": "OCCUPIED"
+    },
+    {
+      "id": 38,
+      "number": "402",
+      "floor": 4,
+      "roomTypeId": 1,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 39,
+      "number": "403",
+      "floor": 4,
+      "roomTypeId": 1,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 40,
+      "number": "404",
+      "floor": 4,
+      "roomTypeId": 1,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 41,
+      "number": "405",
+      "floor": 4,
+      "roomTypeId": 1,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 42,
+      "number": "406",
+      "floor": 4,
+      "roomTypeId": 1,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 43,
+      "number": "407",
+      "floor": 4,
+      "roomTypeId": 2,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 44,
+      "number": "408",
+      "floor": 4,
+      "roomTypeId": 2,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 45,
+      "number": "409",
+      "floor": 4,
+      "roomTypeId": 2,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 46,
+      "number": "410",
+      "floor": 4,
+      "roomTypeId": 2,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 47,
+      "number": "411",
+      "floor": 4,
+      "roomTypeId": 3,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 48,
+      "number": "412",
+      "floor": 4,
+      "roomTypeId": 3,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 49,
+      "number": "501",
+      "floor": 5,
+      "roomTypeId": 1,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 50,
+      "number": "502",
+      "floor": 5,
+      "roomTypeId": 1,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 51,
+      "number": "503",
+      "floor": 5,
+      "roomTypeId": 1,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 52,
+      "number": "504",
+      "floor": 5,
+      "roomTypeId": 1,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 53,
+      "number": "505",
+      "floor": 5,
+      "roomTypeId": 1,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 54,
+      "number": "506",
+      "floor": 5,
+      "roomTypeId": 1,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 55,
+      "number": "507",
+      "floor": 5,
+      "roomTypeId": 2,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 56,
+      "number": "508",
+      "floor": 5,
+      "roomTypeId": 2,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 57,
+      "number": "509",
+      "floor": 5,
+      "roomTypeId": 2,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 58,
+      "number": "510",
+      "floor": 5,
+      "roomTypeId": 2,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 59,
+      "number": "511",
+      "floor": 5,
+      "roomTypeId": 3,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 60,
+      "number": "512",
+      "floor": 5,
+      "roomTypeId": 3,
+      "status": "MAINTENANCE"
+    }
+  ],
+  "bookings": [
+    {
+      "id": 1,
+      "bookingCode": "BK0001",
+      "guestName": "Nguyễn Văn An",
+      "phone": "0912345678",
+      "roomId": 2,
+      "checkIn": "2026-11-06",
+      "checkOut": "2026-11-10",
+      "pricePerNight": 500000,
+      "source": "DIRECT",
+      "adults": 2,
+      "children": 0,
+      "note": "",
+      "status": "CHECKED_IN",
+      "createdAt": "2026-11-01T09:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "bookingCode": "BK0002",
+      "guestName": "Trần Thị Bình",
+      "phone": "0987654321",
+      "roomId": 19,
+      "checkIn": "2026-11-08",
+      "checkOut": "2026-11-11",
+      "pricePerNight": 800000,
+      "source": "OTA_BOOKING",
+      "adults": 2,
+      "children": 0,
+      "note": "Khách đến chuyến bay tối",
+      "status": "BOOKED",
+      "createdAt": "2026-11-01T09:00:00.000Z"
+    },
+    {
+      "id": 3,
+      "bookingCode": "BK0003",
+      "guestName": "Lê Minh Châu",
+      "phone": "0901112233",
+      "roomId": 35,
+      "checkIn": "2026-11-12",
+      "checkOut": "2026-11-15",
+      "pricePerNight": 1200000,
+      "source": "OTA_EXPEDIA",
+      "adults": 3,
+      "children": 0,
+      "note": "",
+      "status": "BOOKED",
+      "createdAt": "2026-11-01T09:00:00.000Z"
+    },
+    {
+      "id": 4,
+      "bookingCode": "BK0004",
+      "guestName": "Phạm Quốc Dũng",
+      "phone": "0933445566",
+      "roomId": 29,
+      "checkIn": "2026-11-04",
+      "checkOut": "2026-11-07",
+      "pricePerNight": 500000,
+      "source": "DIRECT",
+      "adults": 1,
+      "children": 0,
+      "note": "",
+      "status": "CHECKED_OUT",
+      "createdAt": "2026-11-01T09:00:00.000Z"
+    },
+    {
+      "id": 5,
+      "bookingCode": "BK0005",
+      "guestName": "Hoàng Thị Lan",
+      "phone": "0977889900",
+      "roomId": 37,
+      "checkIn": "2026-11-07",
+      "checkOut": "2026-11-09",
+      "pricePerNight": 500000,
+      "source": "CORPORATE",
+      "adults": 1,
+      "children": 0,
+      "note": "",
+      "status": "CHECKED_IN",
+      "createdAt": "2026-11-01T09:00:00.000Z"
+    },
+    {
+      "id": 6,
+      "bookingCode": "BK0006",
+      "guestName": "Vũ Đức Hải",
+      "phone": "0966554433",
+      "roomId": 10,
+      "checkIn": "2026-11-09",
+      "checkOut": "2026-11-10",
+      "pricePerNight": 800000,
+      "source": "OTA_BOOKING",
+      "adults": 2,
+      "children": 0,
+      "note": "",
+      "status": "CANCELLED",
+      "createdAt": "2026-11-01T09:00:00.000Z"
+    },
+    {
+      "id": 7,
+      "bookingCode": "BK0007",
+      "guestName": "Đặng Thu Hà",
+      "phone": "0944556677",
+      "roomId": 20,
+      "checkIn": "2026-11-09",
+      "checkOut": "2026-11-13",
+      "pricePerNight": 800000,
+      "source": "DIRECT",
+      "adults": 2,
+      "children": 0,
+      "note": "",
+      "status": "BOOKED",
+      "createdAt": "2026-11-01T09:00:00.000Z"
+    },
+    {
+      "id": 8,
+      "bookingCode": "BK0008",
+      "guestName": "John Miller",
+      "phone": "0988112233",
+      "roomId": 49,
+      "checkIn": "2026-11-10",
+      "checkOut": "2026-11-12",
+      "pricePerNight": 500000,
+      "source": "OTA_BOOKING",
+      "adults": 2,
+      "children": 0,
+      "note": "",
+      "status": "BOOKED",
+      "createdAt": "2026-11-01T09:00:00.000Z"
+    }
+  ],
+  "services": [
+    {
+      "id": 1,
+      "name": "Ăn sáng",
+      "price": 100000,
+      "isActive": true
+    },
+    {
+      "id": 2,
+      "name": "Giặt là",
+      "price": 50000,
+      "isActive": true
+    },
+    {
+      "id": 3,
+      "name": "Thuê xe máy",
+      "price": 150000,
+      "isActive": true
+    },
+    {
+      "id": 4,
+      "name": "Tour Hạ Long",
+      "price": 900000,
+      "isActive": true
+    },
+    {
+      "id": 5,
+      "name": "Đưa đón sân bay",
+      "price": 300000,
+      "isActive": true
+    }
+  ],
+  "bookingServices": [
+    {
+      "id": 1,
+      "bookingId": 1,
+      "serviceId": 1,
+      "name": "Ăn sáng",
+      "price": 100000,
+      "quantity": 2,
+      "note": "",
+      "usedDate": "2026-11-07"
+    },
+    {
+      "id": 2,
+      "bookingId": 1,
+      "serviceId": 2,
+      "name": "Giặt là",
+      "price": 50000,
+      "quantity": 3,
+      "note": "3kg quần áo",
+      "usedDate": "2026-11-07"
+    },
+    {
+      "id": 3,
+      "bookingId": 4,
+      "serviceId": 3,
+      "name": "Thuê xe máy",
+      "price": 150000,
+      "quantity": 1,
+      "note": "",
+      "usedDate": "2026-11-05"
+    }
+  ],
+  "payments": [
+    {
+      "id": 1,
+      "bookingId": 1,
+      "amount": 500000,
+      "method": "CASH",
+      "createdAt": "2026-11-06T14:10:00.000Z"
+    },
+    {
+      "id": 2,
+      "bookingId": 4,
+      "amount": 1650000,
+      "method": "TRANSFER",
+      "createdAt": "2026-11-07T11:30:00.000Z"
+    }
+  ]
+}
