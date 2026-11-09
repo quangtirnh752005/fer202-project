@@ -2,6 +2,8 @@ import {
   calcInvoice,
   canTransition,
   cancelError,
+  changeRoomError,
+  priceAfterMove,
   checkInError,
   checkOutError,
   findOverlap,
@@ -149,6 +151,39 @@ describe('dịch vụ và thu tiền', () => {
     expect(paymentError(staying, 300001, 300000)).toMatch('vượt');
     expect(paymentError(staying, 0, 300000)).toBeTruthy();
     expect(paymentError(booking(), 1000, 300000)).toMatch('đang ở');
+  });
+});
+
+describe('đổi phòng (kéo bar)', () => {
+  const types = [{ id: 1, price: 500000 }, { id: 2, price: 800000 }];
+  const r101 = { id: 1, number: '101', roomTypeId: 1, status: 'AVAILABLE' };
+  const r102 = { id: 2, number: '102', roomTypeId: 1, status: 'AVAILABLE' };
+  const r201 = { id: 3, number: '201', roomTypeId: 2, status: 'AVAILABLE' };
+
+  test('cùng hạng giữ giá đã chốt, khác hạng lấy giá hạng mới', () => {
+    const b = booking({ pricePerNight: 450000 });
+    expect(priceAfterMove(b, r101, r102, types)).toBe(450000);
+    expect(priceAfterMove(b, r101, r201, types)).toBe(800000);
+  });
+
+  test('cho chuyển khi phòng đích trống ngày đó', () => {
+    expect(changeRoomError(booking(), r102, [booking()])).toBeNull();
+  });
+
+  test('chặn khi phòng đích có khách trùng ngày', () => {
+    const other = booking({ id: 9, bookingCode: 'BK0009', roomId: 2 });
+    expect(changeRoomError(booking(), r102, [booking(), other])).toMatch('BK0009');
+  });
+
+  test('khách đang ở chỉ chuyển sang phòng Trống; khách chưa đến thì phòng Bẩn vẫn được', () => {
+    const dirty = { ...r102, status: 'DIRTY' };
+    expect(changeRoomError(booking({ status: 'CHECKED_IN' }), dirty, [])).toMatch('Bẩn');
+    expect(changeRoomError(booking(), dirty, [])).toBeNull();
+  });
+
+  test('không đổi phòng cho đặt phòng đã đóng', () => {
+    expect(changeRoomError(booking({ status: 'CHECKED_OUT' }), r102, [])).toBeTruthy();
+    expect(changeRoomError(booking({ status: 'CANCELLED' }), r102, [])).toBeTruthy();
   });
 });
 

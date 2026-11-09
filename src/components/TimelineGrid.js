@@ -3,9 +3,11 @@ import { useDispatch, useSelector } from 'react-redux';
 import { App, Dropdown, Empty } from 'antd';
 import { openBookingForm, openFolio, openPayment } from '../context/actions/uiActions';
 import { setRoomStatus } from '../context/actions/roomActions';
-import { sameId } from '../utils/booking';
+import { changeRoom } from '../context/actions/bookingActions';
+import { changeRoomError, priceAfterMove, sameId } from '../utils/booking';
 import { ROOM_DISPLAY, ROOM_STATUS } from '../utils/constants';
-import { addDays, nightsBetween, today } from '../utils/date';
+import { addDays, formatDate, nightsBetween, today } from '../utils/date';
+import { formatMoney } from '../utils/money';
 import {
   CHECK_IN_FRAC,
   CHECK_OUT_FRAC,
@@ -26,10 +28,13 @@ import BookingBar from './BookingBar';
 const { labelCol: LABEL_COL, rowHeight: ROW_HEIGHT, groupHeight: GROUP_HEIGHT, headerHeight: HEADER_HEIGHT } = DIM;
 const ACTIVE = ['BOOKED', 'CHECKED_IN'];
 
-// Lễ tân đổi tay được: Bẩn → Trống, Trống ↔ Bảo trì (Đang ở chỉ đổi qua nhận/trả phòng).
+// Lễ tân đổi tay được: Trống ↔ Bẩn, Trống ↔ Bảo trì (Đang ở chỉ đổi qua nhận/trả phòng).
 const ROOM_ACTIONS = {
   DIRTY: [{ key: ROOM_STATUS.AVAILABLE, label: 'Đánh dấu đã dọn' }],
-  AVAILABLE: [{ key: ROOM_STATUS.MAINTENANCE, label: 'Chuyển sang bảo trì' }],
+  AVAILABLE: [
+    { key: ROOM_STATUS.DIRTY, label: 'Đánh dấu phòng bẩn' },
+    { key: ROOM_STATUS.MAINTENANCE, label: 'Chuyển sang bảo trì' },
+  ],
   MAINTENANCE: [{ key: ROOM_STATUS.AVAILABLE, label: 'Hết bảo trì' }],
 };
 
@@ -114,7 +119,7 @@ function RoomLabel({ room }) {
   );
 }
 
-function RoomRow({ row, cols, colWidth, nowPos, selection, onCellMouseDown, menuFor }) {
+function RoomRow({ row, cols, colWidth, nowPos, selection, onCellMouseDown, menuFor, isDropTarget, onRowDragOver, onRowDrop, onBarDragStart, onBarDragEnd }) {
   const { room, bars } = row;
   const stripes = `repeating-linear-gradient(to right, transparent 0px, transparent ${colWidth - 1}px, ${RV.hairline} ${colWidth - 1}px, ${RV.hairline} ${colWidth}px)`;
   const maint = room.status === ROOM_STATUS.MAINTENANCE;
@@ -128,11 +133,20 @@ function RoomRow({ row, cols, colWidth, nowPos, selection, onCellMouseDown, menu
         className="rv-cells"
         aria-label={`Lịch phòng ${room.number}`}
         onMouseDown={(e) => onCellMouseDown(room, e)}
+        onDragOver={(e) => onRowDragOver(room, e)}
+        onDrop={(e) => onRowDrop(room, e)}
         style={{
           position: 'relative',
           flex: 1,
           height: '100%',
-          background: maint ? `repeating-linear-gradient(45deg, rgba(0,0,0,0.035) 0 6px, transparent 6px 12px), ${stripes}` : stripes,
+          background: isDropTarget
+            ? RV.todayTint
+            : maint
+              ? `repeating-linear-gradient(45deg, rgba(0,0,0,0.035) 0 6px, transparent 6px 12px), ${stripes}`
+              : stripes,
+          outline: isDropTarget ? `2px dashed ${RV.now}` : undefined,
+          outlineOffset: -2,
+          zIndex: isDropTarget ? 4 : undefined,
         }}
       >
         {selection && (() => {
@@ -167,6 +181,9 @@ function RoomRow({ row, cols, colWidth, nowPos, selection, onCellMouseDown, menu
               nights={nights}
               trimmed={trimmed}
               menuItems={menuFor(booking)}
+              draggable={booking.status === 'BOOKED' || booking.status === 'CHECKED_IN'}
+              onDragStart={onBarDragStart}
+              onDragEnd={onBarDragEnd}
             />
           );
         })}
@@ -177,7 +194,9 @@ function RoomRow({ row, cols, colWidth, nowPos, selection, onCellMouseDown, menu
 
 export default function TimelineGrid({ startDate, view, grouping, filters }) {
   const dispatch = useDispatch();
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
+  const bookings = useSelector((state) => state.bookings.list);
+  const allRooms = useSelector((state) => state.rooms.list);
   const days = SPAN_DAYS[view];
   const dates = useMemo(() => buildDates(startDate, days), [startDate, days]);
   const todayISO = today();
@@ -251,6 +270,52 @@ export default function TimelineGrid({ startDate, view, grouping, filters }) {
     };
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
+  };
+
+  // Kéo bar sang hàng phòng khác → hộp xác nhận → đổi phòng (giữ ngày). Như app thật:
+  // khác hạng thì nói thẳng là tiền phòng sẽ tính lại.
+  const [draggingId, setDraggingId] = useState(null);
+  const [dropRoomId, setDropRoomId] = useState(null);
+  const handleBarDragEnd = () => {
+    setDraggingId(null);
+    setDropRoomId(null);
+  };
+  const handleRowDragOver = (room, e) => {
+    if (draggingId == null) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (!sameId(dropRoomId, room.id)) setDropRoomId(room.id);
+  };
+  const handleRowDrop = (room, e) => {
+    e.preventDefault();
+    setDropRoomId(null);
+    const booking = bookings.find((b) => sameId(b.id, e.dataTransfer.getData('text/plain')));
+    if (!booking || sameId(booking.roomId, room.id)) return;
+    const error = changeRoomError(booking, room, bookings);
+    if (error) {
+      message.warning(error);
+      return;
+    }
+    const source = allRooms.find((r) => sameId(r.id, booking.roomId));
+    const crossType = !source || source.roomTypeId !== room.roomTypeId;
+    const newPrice = priceAfterMove(booking, source, room, types);
+    const nights = nightsBetween(booking.checkIn, booking.checkOut);
+    const typeName = (id) => (types.find((t) => t.id === id) || {}).name;
+    const stay = `${formatDate(booking.checkIn).slice(0, 5)}–${formatDate(booking.checkOut).slice(0, 5)}`;
+    const move = `từ phòng ${source ? source.number : '?'} sang phòng ${room.number}`;
+    modal.confirm({
+      title: crossType ? 'Đổi phòng khác hạng' : 'Đổi phòng',
+      content: crossType
+        ? `Chuyển khách ${booking.guestName} (${stay}) ${move}, đổi hạng ${typeName(source && source.roomTypeId)} → ${typeName(room.roomTypeId)}. Tiền phòng sẽ TÍNH LẠI: ${nights} đêm × ${formatMoney(newPrice)} = ${formatMoney(nights * newPrice)}.`
+        : `Chuyển khách ${booking.guestName} (${stay}) ${move}?`,
+      okText: 'Đổi phòng',
+      cancelText: 'Huỷ',
+      onOk: async () => {
+        const result = await dispatch(changeRoom(booking.id, room.id));
+        if (result.ok) message.success(`Đã chuyển ${booking.guestName} sang phòng ${room.number}`);
+        else message.error(result.error);
+      },
+    });
   };
 
   const menuFor = (booking) => [
@@ -359,6 +424,11 @@ export default function TimelineGrid({ startDate, view, grouping, filters }) {
                     selection={selection && sameId(selection.roomId, row.room.id) ? selection : null}
                     onCellMouseDown={handleCellMouseDown}
                     menuFor={menuFor}
+                    isDropTarget={dropRoomId != null && sameId(dropRoomId, row.room.id)}
+                    onRowDragOver={handleRowDragOver}
+                    onRowDrop={handleRowDrop}
+                    onBarDragStart={setDraggingId}
+                    onBarDragEnd={handleBarDragEnd}
                   />
                 ))}
             </React.Fragment>

@@ -58,7 +58,7 @@
       "number": "105",
       "floor": 1,
       "roomTypeId": 1,
-      "status": "AVAILABLE"
+      "status": "OCCUPIED"
     },
     {
       "id": 6,
@@ -574,6 +574,23 @@
       "note": "",
       "status": "BOOKED",
       "createdAt": "2026-11-01T09:00:00.000Z"
+    },
+    {
+      "bookingCode": "BK0009",
+      "guestName": "Quang",
+      "phone": "0967834412",
+      "roomId": 5,
+      "checkIn": "2026-11-09",
+      "checkOut": "2026-11-11",
+      "source": "DIRECT",
+      "adults": 2,
+      "children": 0,
+      "note": "",
+      "pricePerNight": 500000,
+      "status": "CHECKED_IN",
+      "createdAt": "2026-11-09T05:58:04.140Z",
+      "id": 9,
+      "checkedInAt": "2026-11-09T05:58:12.720Z"
     }
   ],
   "services": [
@@ -638,6 +655,16 @@
       "quantity": 1,
       "note": "",
       "usedDate": "2026-11-05"
+    },
+    {
+      "bookingId": 9,
+      "serviceId": 1,
+      "name": "Ăn sáng",
+      "price": 100000,
+      "quantity": 1,
+      "note": "",
+      "usedDate": "2026-11-09",
+      "id": 4
     }
   ],
   "payments": [
@@ -654,6 +681,22 @@
       "amount": 1650000,
       "method": "TRANSFER",
       "createdAt": "2026-11-07T11:30:00.000Z"
+    },
+    {
+      "bookingId": 9,
+      "amount": 1100000,
+      "allocations": [
+        {
+          "key": "ROOM",
+          "amount": 1000000
+        },
+        {
+          "key": "S:4",
+          "amount": 100000
+        }
+      ],
+      "createdAt": "2026-11-09T06:22:51.793Z",
+      "id": 3
     }
   ]
 }

@@ -1,6 +1,7 @@
 import api, { errorMessage, fail, ok } from '../../utils/api';
 import { calcInvoice, folioOf, paymentError, sameId, serviceUsageError } from '../../utils/booking';
-import { BOOKING_STATUS, PAYMENT_METHOD_LABEL } from '../../utils/constants';
+import { BOOKING_STATUS } from '../../utils/constants';
+import { allocatePayment, billLines, serviceKey } from '../../utils/bill';
 import { today } from '../../utils/date';
 import {
   ADD_BOOKING_SERVICE_SUCCESS,
@@ -59,6 +60,10 @@ export const removeBookingService = (id) => async (dispatch, getState) => {
   if (!booking || booking.status !== BOOKING_STATUS.CHECKED_IN) {
     return fail('Chỉ xoá dịch vụ khi khách đang ở');
   }
+  // Dòng đã thu tiền mà xoá thì tiền đã thu mất chỗ gắn — hoá đơn lệch với các lần thu.
+  const { services, payments } = folioOf(state.folio, booking.id);
+  const billLine = billLines(booking, services, payments).find((l) => l.key === serviceKey(line.id));
+  if (billLine && billLine.paid > 0) return fail(`"${line.name}" đã thu tiền, không xoá được`);
   try {
     await api.delete(`/bookingServices/${line.id}`);
     dispatch({ type: DELETE_BOOKING_SERVICE_SUCCESS, payload: line.id });
@@ -68,11 +73,11 @@ export const removeBookingService = (id) => async (dispatch, getState) => {
   }
 };
 
-export const addPayment = (bookingId, { amount, method }) => async (dispatch, getState) => {
+/** ticked: khoá các khoản lễ tân tick ('ROOM' | 'S:<id>') — nhận tiền trước, phần dư theo thứ tự hoá đơn. */
+export const addPayment = (bookingId, { amount, ticked = [] }) => async (dispatch, getState) => {
   const state = getState();
   const booking = findBooking(state, bookingId);
   if (!booking) return fail('Không tìm thấy đặt phòng');
-  if (!PAYMENT_METHOD_LABEL[method]) return fail('Chọn hình thức thanh toán');
 
   const { services, payments } = folioOf(state.folio, booking.id);
   const { balance } = calcInvoice(booking, services, payments);
@@ -83,7 +88,7 @@ export const addPayment = (bookingId, { amount, method }) => async (dispatch, ge
     const res = await api.post('/payments', {
       bookingId: booking.id,
       amount,
-      method,
+      allocations: allocatePayment(amount, billLines(booking, services, payments), ticked),
       createdAt: new Date().toISOString(),
     });
     dispatch({ type: ADD_PAYMENT_SUCCESS, payload: res.data });

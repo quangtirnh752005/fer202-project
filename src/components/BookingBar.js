@@ -28,10 +28,13 @@ function HoverCard({ booking, nights }) {
  * Bar đặt phòng trên lưới — chép từ BookingBar.tsx của app thật (bỏ kéo-thả đổi phòng).
  * Rê chuột: thẻ thông tin khách. Bấm: menu Chi tiết / Thanh toán.
  */
-export default function BookingBar({ booking, label, color, geo, nights, trimmed, menuItems }) {
+export default function BookingBar({ booking, label, color, geo, nights, trimmed, menuItems, draggable, onDragStart, onDragEnd }) {
   const R = 7;
   const [menuOpen, setMenuOpen] = useState(false);
   const [hoverOpen, setHoverOpen] = useState(false);
+  // Thẻ thông tin phải tắt khi bắt đầu kéo: nó che đúng hàng phòng đích. HTML5 drag
+  // không sinh mouseleave nên Popover không tự đóng — phải điều khiển `open`.
+  const [dragging, setDragging] = useState(false);
   // Mép bị lưới cắt thì phẳng + mũi ‹ ›; mép bị vạch "bây giờ" cắt thì phẳng nhưng không mũi.
   const flatStart = geo.clippedStart || trimmed;
 
@@ -44,6 +47,19 @@ export default function BookingBar({ booking, label, color, geo, nights, trimmed
       aria-haspopup="menu"
       aria-expanded={menuOpen}
       onMouseDown={(e) => e.stopPropagation()}
+      draggable={draggable}
+      onDragStart={(e) => {
+        e.dataTransfer.setData('text/plain', String(booking.id));
+        e.dataTransfer.effectAllowed = 'move';
+        setDragging(true);
+        setHoverOpen(false);
+        setMenuOpen(false);
+        onDragStart(booking.id);
+      }}
+      onDragEnd={() => {
+        setDragging(false);
+        onDragEnd();
+      }}
       onKeyDown={(e) => {
         if (e.key !== 'Enter' && e.key !== ' ') return;
         e.preventDefault();
@@ -76,7 +92,8 @@ export default function BookingBar({ booking, label, color, geo, nights, trimmed
         display: 'flex',
         alignItems: 'center',
         gap: 5,
-        cursor: 'pointer',
+        cursor: draggable ? 'grab' : 'pointer',
+        opacity: dragging ? 0.55 : 1,
         zIndex: 2,
       }}
     >
@@ -91,7 +108,7 @@ export default function BookingBar({ booking, label, color, geo, nights, trimmed
       content={<HoverCard booking={booking} nights={nights} />}
       color={RV.ink}
       placement="top"
-      open={hoverOpen && !menuOpen}
+      open={hoverOpen && !menuOpen && !dragging}
       onOpenChange={setHoverOpen}
       trigger={['hover', 'focus']}
       mouseEnterDelay={0.3}

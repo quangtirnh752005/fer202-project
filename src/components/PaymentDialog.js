@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { App, Button, Col, Modal, Popconfirm, Row, Segmented, Table } from 'antd';
+import { App, Button, Checkbox, Col, Modal, Popconfirm, Row, Table } from 'antd';
+import { billLines, tickedDue } from '../utils/bill';
 import { addPayment, removeBookingService } from '../context/actions/folioActions';
 import { checkOut } from '../context/actions/bookingActions';
 import { closeModal } from '../context/actions/uiActions';
 import { calcInvoice, folioOf, sameId } from '../utils/booking';
-import { BOOKING_STATUS, PAYMENT_METHOD_LABEL, SOURCE_OPTIONS } from '../utils/constants';
+import { BOOKING_STATUS, SOURCE_OPTIONS } from '../utils/constants';
 import { formatDate } from '../utils/date';
 import { formatMoney } from '../utils/money';
 import { sen, text } from '../utils/theme';
@@ -17,7 +18,6 @@ import ServiceChargePanel from './ServiceChargePanel';
 const MODAL_WIDTH = 'min(1240px, 94vw)';
 const LABEL_WIDTH = 124;
 const sub = { fontSize: 12, color: sen.muted };
-const METHOD_OPTIONS = Object.entries(PAYMENT_METHOD_LABEL).map(([value, label]) => ({ value, label }));
 
 function Field({ label, value }) {
   return (
@@ -56,8 +56,8 @@ export default function PaymentDialog({ bookingId }) {
   const rooms = useSelector((state) => state.rooms.list);
   const types = useSelector((state) => state.rooms.types);
   const folio = useSelector((state) => state.folio);
-  const [method, setMethod] = useState('CASH');
   const [amount, setAmount] = useState(null);
+  const [ticked, setTicked] = useState([]);
   const [saving, setSaving] = useState(false);
   const close = () => dispatch(closeModal());
 
@@ -70,27 +70,25 @@ export default function PaymentDialog({ bookingId }) {
   const canCollect = isStaying && invoice.balance > 0;
   const source = SOURCE_OPTIONS.find((s) => s.value === booking.source);
 
-  const rows = [
-    {
-      key: 'room',
-      stt: 1,
-      description: `Tiền phòng ${room ? room.number : ''}${type ? ` (${type.name})` : ''}`,
-      note: `${formatDate(booking.checkIn).slice(0, 5)} → ${formatDate(booking.checkOut)}`,
-      qty: invoice.nights,
-      unit: booking.pricePerNight,
-      total: invoice.roomTotal,
-    },
-    ...services.map((s, i) => ({
-      key: `s-${s.id}`,
-      stt: i + 2,
-      description: s.name,
-      note: s.note,
-      qty: s.quantity,
-      unit: s.price,
-      total: s.price * s.quantity,
-      lineId: s.id,
-    })),
-  ];
+  // Mỗi dòng biết đã trả bao nhiêu / còn nợ bao nhiêu (tiền thu gắn vào từng khoản).
+  const rows = billLines(booking, services, payments).map((l) =>
+    l.kind === 'ROOM'
+      ? {
+          ...l,
+          description: `Tiền phòng ${room ? room.number : ''}${type ? ` (${type.name})` : ''}`,
+          note: `${formatDate(booking.checkIn).slice(0, 5)} → ${formatDate(booking.checkOut)}`,
+        }
+      : { ...l, description: l.service.name, note: l.service.note, lineId: l.service.id }
+  );
+  // Khoản vừa trả đủ thì tự rơi khỏi danh sách tick.
+  const activeTicks = ticked.filter((k) => rows.some((r) => r.key === k && r.due > 0));
+
+  const handleTick = (key, checked) => {
+    const next = checked ? [...activeTicks, key] : activeTicks.filter((k) => k !== key);
+    setTicked(next);
+    // Như app thật: tick khoản nào thì ô Thu tiền tự điền đúng số còn nợ của các khoản đó.
+    setAmount(next.length > 0 ? tickedDue(rows, next) : null);
+  };
 
   const handleRemove = async (lineId) => {
     const result = await dispatch(removeBookingService(lineId));
@@ -99,6 +97,19 @@ export default function PaymentDialog({ bookingId }) {
   };
 
   const columns = [
+    {
+      title: '',
+      key: 'tick',
+      width: 40,
+      render: (_, r) =>
+        canCollect && r.due > 0 ? (
+          <Checkbox
+            aria-label={`Chọn khoản ${r.description}`}
+            checked={activeTicks.includes(r.key)}
+            onChange={(e) => handleTick(r.key, e.target.checked)}
+          />
+        ) : null,
+    },
     { title: 'STT', dataIndex: 'stt', width: 52, align: 'right' },
     {
       title: 'Nội dung dịch vụ',
@@ -107,6 +118,11 @@ export default function PaymentDialog({ bookingId }) {
         <>
           {r.description}
           {r.note ? <div style={sub}>{r.note}</div> : null}
+          {r.due === 0 ? (
+            <div style={{ ...sub, color: text.success }}>Đã trả</div>
+          ) : r.paid > 0 ? (
+            <div style={{ ...sub, color: text.danger }}>Đã trả {formatMoney(r.paid)} · còn {formatMoney(r.due)}</div>
+          ) : null}
         </>
       ),
     },
@@ -118,7 +134,7 @@ export default function PaymentDialog({ bookingId }) {
       key: 'action',
       width: 48,
       render: (_, r) =>
-        isStaying && r.lineId ? (
+        isStaying && r.lineId && r.paid === 0 ? (
           <Popconfirm title={`Xoá "${r.description}"?`} onConfirm={() => handleRemove(r.lineId)}>
             <Button type="link" size="small" danger style={{ padding: 0 }}>Xoá</Button>
           </Popconfirm>
@@ -128,11 +144,12 @@ export default function PaymentDialog({ bookingId }) {
 
   const handleCollect = async () => {
     setSaving(true);
-    const result = await dispatch(addPayment(booking.id, { amount: amount == null ? NaN : amount, method }));
+    const result = await dispatch(addPayment(booking.id, { amount: amount == null ? NaN : amount, ticked: activeTicks }));
     setSaving(false);
     if (result.ok) {
-      message.success(`Đã thu ${formatMoney(amount)} (${PAYMENT_METHOD_LABEL[method]})`);
+      message.success(`Đã thu ${formatMoney(amount)}`);
       setAmount(null);
+      setTicked([]);
     } else {
       message.error(result.error);
     }
@@ -188,7 +205,14 @@ export default function PaymentDialog({ bookingId }) {
         <Row gutter={[16, 16]}>
           <Col xs={24} xl={14}>
             <SectionCard title="Chi phí">
-              <Table dataSource={rows} columns={columns} rowKey="key" pagination={false} size="small" />
+              <Table
+                dataSource={rows}
+                columns={columns}
+                rowKey="key"
+                pagination={false}
+                size="small"
+                onRow={(r) => (r.due === 0 ? { style: { color: sen.muted } } : {})}
+              />
               <div style={{ marginTop: 12 }}>
                 <SumLine label="Tổng cộng" value={invoice.total} strong />
                 <SumLine label="Đã thu" value={invoice.paid} tone={invoice.paid > 0 ? text.success : undefined} />
@@ -199,8 +223,7 @@ export default function PaymentDialog({ bookingId }) {
           <Col xs={24} xl={10} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <ServiceChargePanel booking={booking} />
             <SectionCard title="Thu tiền">
-              <Segmented options={METHOD_OPTIONS} value={method} onChange={setMethod} disabled={!canCollect} block />
-              <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+              <div style={{ display: 'flex', gap: 8 }}>
                 <MoneyInput aria-label="Số tiền thu" placeholder="Số tiền" value={amount} onChange={setAmount} min={0} disabled={!canCollect} />
                 <Button onClick={() => setAmount(invoice.balance)} disabled={!canCollect}>Thu hết</Button>
                 <Button type="primary" onClick={handleCollect} loading={saving} disabled={!canCollect || !amount}>
@@ -224,7 +247,6 @@ export default function PaymentDialog({ bookingId }) {
                 locale={{ emptyText: 'Chưa thu lần nào' }}
                 columns={[
                   { title: 'Thời gian', dataIndex: 'createdAt', render: (v) => new Date(v).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' }) },
-                  { title: 'Hình thức', dataIndex: 'method', render: (m) => PAYMENT_METHOD_LABEL[m] || m },
                   { title: 'Số tiền', dataIndex: 'amount', align: 'right', render: (v) => formatMoney(v) },
                 ]}
               />

@@ -2,10 +2,12 @@ import api, { errorMessage, fail, ok } from '../../utils/api';
 import {
   calcInvoice,
   cancelError,
+  changeRoomError,
   checkInError,
   checkOutError,
   folioOf,
   nextBookingCode,
+  priceAfterMove,
   sameId,
   validateBooking,
 } from '../../utils/booking';
@@ -92,27 +94,32 @@ export const cancelBooking = (id) => async (dispatch, getState) => {
   }
 };
 
-// json-server không có transaction: ghi bước 1, nếu bước 2 hỏng thì ghi ngược bước 1
-// để booking và phòng không lệch trạng thái nhau.
-async function patchPair(dispatch, first, second) {
-  const firstRes = await api.patch(first.url, first.body);
+// json-server không có transaction: ghi lần lượt từng bước; bước nào hỏng thì ghi ngược
+// (undo) các bước đã xong theo thứ tự đảo, để booking và phòng không lệch trạng thái nhau.
+// Chỉ dispatch vào store khi MỌI bước đã ghi xong.
+async function patchSequence(dispatch, steps) {
+  const done = [];
   try {
-    const secondRes = await api.patch(second.url, second.body);
-    dispatch({ type: first.type, payload: firstRes.data });
-    dispatch({ type: second.type, payload: secondRes.data });
+    for (const step of steps) {
+      const res = await api.patch(step.url, step.body);
+      done.push({ step, data: res.data });
+    }
   } catch (e) {
-    try {
-      await api.patch(first.url, first.undo);
-    } catch (undoError) {
-      throw new Error('Ghi dở dang, dữ liệu có thể lệch. Tải lại trang để kiểm tra.');
+    for (const { step } of [...done].reverse()) {
+      try {
+        await api.patch(step.url, step.undo);
+      } catch (undoError) {
+        throw new Error('Ghi dở dang, dữ liệu có thể lệch. Tải lại trang để kiểm tra.');
+      }
     }
     throw e;
   }
+  done.forEach(({ step, data }) => dispatch({ type: step.type, payload: data }));
 }
 
-const runPair = async (dispatch, first, second) => {
+const runSteps = async (dispatch, steps) => {
   try {
-    await patchPair(dispatch, first, second);
+    await patchSequence(dispatch, steps);
     return ok();
   } catch (e) {
     return fail(e.isAxiosError ? errorMessage(e) : e.message);
@@ -127,8 +134,7 @@ export const checkIn = (id) => async (dispatch, getState) => {
   const error = checkInError(booking, room, today());
   if (error) return fail(error);
 
-  return runPair(
-    dispatch,
+  return runSteps(dispatch, [
     {
       url: `/rooms/${room.id}`,
       body: { status: ROOM_STATUS.OCCUPIED },
@@ -139,8 +145,8 @@ export const checkIn = (id) => async (dispatch, getState) => {
       url: `/bookings/${booking.id}`,
       body: { status: BOOKING_STATUS.CHECKED_IN, checkedInAt: new Date().toISOString() },
       type: UPDATE_BOOKING_SUCCESS,
-    }
-  );
+    },
+  ]);
 };
 
 export const checkOut = (id) => async (dispatch, getState) => {
@@ -151,8 +157,7 @@ export const checkOut = (id) => async (dispatch, getState) => {
   const error = checkOutError(booking, calcInvoice(booking, services, payments));
   if (error) return fail(error);
 
-  return runPair(
-    dispatch,
+  return runSteps(dispatch, [
     {
       url: `/bookings/${booking.id}`,
       body: { status: BOOKING_STATUS.CHECKED_OUT, checkedOutAt: new Date().toISOString() },
@@ -163,6 +168,42 @@ export const checkOut = (id) => async (dispatch, getState) => {
       url: `/rooms/${booking.roomId}`,
       body: { status: ROOM_STATUS.DIRTY },
       type: UPDATE_ROOM_SUCCESS,
-    }
-  );
+    },
+  ]);
+};
+
+/**
+ * Kéo bar sang phòng khác trên Sơ đồ phòng (giữ nguyên ngày). Khác hạng thì tính lại giá/đêm.
+ * Khách đang ở: phòng mới → Đang ở, phòng cũ → Trống (không tự đánh Bẩn — lễ tân tự
+ * chuyển Bẩn ở Sơ đồ phòng nếu cần dọn), cùng với đổi roomId.
+ */
+export const changeRoom = (id, targetRoomId) => async (dispatch, getState) => {
+  const state = getState();
+  const booking = findBooking(state, id);
+  if (!booking) return fail('Không tìm thấy đặt phòng');
+  const target = findRoom(state, targetRoomId);
+  if (target && sameId(target.id, booking.roomId)) return fail('Khách đang ở chính phòng này');
+  const error = changeRoomError(booking, target, state.bookings.list);
+  if (error) return fail(error);
+
+  const source = findRoom(state, booking.roomId);
+  const newPrice = priceAfterMove(booking, source, target, state.rooms.types);
+  const { services, payments } = folioOf(state.folio, booking.id);
+  if (calcInvoice({ ...booking, pricePerNight: newPrice }, services, payments).balance < 0) {
+    return fail('Đã thu nhiều hơn tổng tiền sau khi đổi hạng — không đổi xuống hạng rẻ hơn được');
+  }
+
+  const bookingStep = {
+    url: `/bookings/${booking.id}`,
+    body: { roomId: target.id, pricePerNight: newPrice },
+    undo: { roomId: booking.roomId, pricePerNight: booking.pricePerNight },
+    type: UPDATE_BOOKING_SUCCESS,
+  };
+  if (booking.status === BOOKING_STATUS.BOOKED) return runSteps(dispatch, [bookingStep]);
+
+  return runSteps(dispatch, [
+    { url: `/rooms/${target.id}`, body: { status: ROOM_STATUS.OCCUPIED }, undo: { status: target.status }, type: UPDATE_ROOM_SUCCESS },
+    bookingStep,
+    { url: `/rooms/${source.id}`, body: { status: ROOM_STATUS.AVAILABLE }, type: UPDATE_ROOM_SUCCESS },
+  ]);
 };

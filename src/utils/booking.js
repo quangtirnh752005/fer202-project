@@ -93,6 +93,26 @@ export function currentBookingOf(room, bookings, todayStr) {
   );
 }
 
+/** Đơn giá/đêm sau khi chuyển phòng: cùng hạng giữ giá đã chốt, khác hạng lấy giá hạng mới. */
+export function priceAfterMove(booking, sourceRoom, targetRoom, roomTypes) {
+  if (sourceRoom && sourceRoom.roomTypeId === targetRoom.roomTypeId) return booking.pricePerNight;
+  const type = roomTypes.find((t) => t.id === targetRoom.roomTypeId);
+  return type ? type.price : booking.pricePerNight;
+}
+
+/** Kéo bar sang phòng khác (giữ nguyên ngày). Gọi khi phòng đích KHÁC phòng hiện tại. */
+export function changeRoomError(booking, targetRoom, bookings) {
+  if (!ACTIVE_STATUSES.includes(booking.status)) return 'Chỉ đổi phòng cho đặt phòng chưa trả phòng';
+  if (!targetRoom) return 'Không tìm thấy phòng';
+  const clash = findOverlap(bookings, { ...booking, roomId: targetRoom.id });
+  if (clash) return `Phòng ${targetRoom.number} đã có khách trùng ngày (${clash.bookingCode || `#${clash.id}`})`;
+  // Khách đang ở chuyển ngay bây giờ → phòng đích phải sạch và trống thật.
+  if (booking.status === CHECKED_IN && targetRoom.status !== ROOM_STATUS.AVAILABLE) {
+    return `Phòng ${targetRoom.number} đang "${ROOM_DISPLAY[targetRoom.status].label}", khách đang ở không chuyển sang được`;
+  }
+  return null;
+}
+
 // Các hàm *Error trả về câu lỗi để hiện cho lễ tân, hoặc null nếu hợp lệ.
 export function checkInError(booking, room, todayStr) {
   if (!canTransition(booking.status, CHECKED_IN)) return 'Chỉ nhận phòng được khi đặt phòng đang ở trạng thái Đã đặt';

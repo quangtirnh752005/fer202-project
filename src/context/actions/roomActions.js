@@ -9,7 +9,7 @@ const { AVAILABLE, DIRTY, MAINTENANCE } = ROOM_STATUS;
 // Lễ tân chỉ đổi tay được các trạng thái này; OCCUPIED chỉ do nhận/trả phòng đặt.
 const MANUAL_TRANSITIONS = {
   [DIRTY]: [AVAILABLE],
-  [AVAILABLE]: [MAINTENANCE],
+  [AVAILABLE]: [DIRTY, MAINTENANCE],
   [MAINTENANCE]: [AVAILABLE],
 };
 

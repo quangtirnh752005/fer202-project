@@ -48,9 +48,3 @@ export const SOURCE_OPTIONS = [
   { value: 'OTA_EXPEDIA', label: 'Expedia', tag: 'EXPEDIA' },
   { value: 'CORPORATE', label: 'Công ty', tag: 'CORP' },
 ];
-
-export const PAYMENT_METHOD_LABEL = {
-  CASH: 'Tiền mặt',
-  CARD: 'Thẻ',
-  TRANSFER: 'Chuyển khoản',
-};
